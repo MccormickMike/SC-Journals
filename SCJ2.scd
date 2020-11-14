@@ -1,4 +1,4 @@
- /* SC Journal #2 */
+/* SC Journal #2 */
 
 // post window zoom!!
 // post window wraps? yes/no
@@ -10,8 +10,8 @@
 
 (
 var server = Server.default;
-var path = "/Users/mikemccormick/Desktop/SCJ2/"; // folder of materials
-var ampScale = 0.53;
+var path = "/Users/mikemccormick/Desktop/SCJ2/";              // folder of materials
+var ampScale = 0.53;                                          // do I need this? Or was this just for the shitty PA in Leveld?
 
 server.waitForBoot({
 
@@ -24,13 +24,11 @@ server.waitForBoot({
 	(
 		~buffers = Dictionary[
 
-			\breakthrough -> PathName(path ++ "hits/breakthrough/").entries.collect({
-				arg sf;
+			\breakthrough -> PathName(path ++ "hits/breakthrough/").entries.collect({ |sf|
 				Buffer.read(server,sf.fullPath);
 			}),
 
-			\deutsch -> PathName(path ++ "hits/deutsch/").entries.collect({
-				arg sf;
+			\deutsch -> PathName(path ++ "hits/deutsch/").entries.collect({ |sf|
 				Buffer.read(server,sf.fullPath);
 			}),
 
@@ -63,7 +61,7 @@ server.waitForBoot({
 	/* SynthDefs */
 
 	(
-		SynthDef(\phantomPB,{
+		SynthDef(\phantomPB,{                                                        // don't think I need this synth!! change the below implementations to \monoPB
 			arg bufnum,rate=1,pan=0,amp=0.5,outBus=0;
 			var sig;
 
@@ -74,79 +72,58 @@ server.waitForBoot({
 		}).add;
 
 		SynthDef(\monoPB,{
-			arg bufnum,rate=1,pan=0,amp=0.5,outBus=0;
-			var sig;
-
-			sig = PlayBuf.ar(1,bufnum,BufRateScale.kr(bufnum)*rate,doneAction:2);
-			sig = Pan2.ar(sig,pan,amp * ampScale);
-			Out.ar(outBus,sig);
+			var bufnum = \bufnum.kr;
+			var sig = PlayBuf.ar(1,bufnum,BufRateScale.kr(bufnum) * \rate.kr(1),doneAction:2);
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5) * ampScale);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		SynthDef(\stereoPB,{
-			arg bufnum,rate=1,pan=0,amp=0.5,outBus=0;
-			var sig;
-
-			sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum)*rate,doneAction:2);
-			sig = Balance2.ar(sig[0],sig[1],pan,amp * ampScale);
-			Out.ar(outBus,sig);
+			var bufnum = \bufnum.kr;
+			var sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum) * \rate.kr(1),doneAction:2);
+			sig = Balance2.ar(sig[0],sig[1],\pan.kr(0),\amp.kr(0.5) * ampScale);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		SynthDef(\sines,{
-			arg freq = 1300,gate=1,atk=5,rls=0.1,pan=0,amp=0.5,outBus=0;
-			var sig,env;
-
-			env = EnvGen.kr(Env.asr(atk,1,rls,2),gate,doneAction:2);
-			sig = SinOsc.ar(freq);
-			sig = Pan2.ar(sig*env,pan,amp * ampScale);
-			Out.ar(outBus,sig);
+			var env = EnvGen.kr(Env.asr(\atk.kr(5),1,\rls.kr(0.1),2),\gate.kr(1),doneAction:2);
+			var sig = SinOsc.ar(\freq.kr(1300));
+			sig = Pan2.ar(sig*env,\pan.kr(0),\amp.kr(0.5) * ampScale);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		SynthDef(\klik,{
-			arg filtFreq=2000,atk=0.02,rls=0.5,pan=0,outBus,amp=0.5;
-			var env,sig;
-
-			env = EnvGen.kr(Env.perc(atk,rls),1,doneAction: 2);
-
-			sig = WhiteNoise.ar(1!2).sum;
-			sig = BPF.ar(sig,filtFreq,0.8,25).clip(-1,1);
+			var env = EnvGen.kr(Env.perc(\atk.kr(0.02),\rls.kr(0.5)),1,doneAction: 2);
+			var sig = WhiteNoise.ar(1!2).sum;
+			sig = BPF.ar(sig,\filtFreq.kr(2000),0.8,25).clip(-1,1);
 			sig = sig*env;
-			sig = Pan2.ar(sig,pan,amp * ampScale);
-
-			Out.ar(outBus,sig);
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5) * ampScale);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
-		SynthDef(\tik,{
-			arg freq=300,atk=0.02,rls=0.5,pan=0,outBus=0,amp=0.5;
-			var env,sig;
-
-			env = EnvGen.kr(Env.perc(atk,rls),1,doneAction: 2);
-
-			sig = SinOsc.ar(freq);
+		SynthDef(\tik,{                                                            // don't think I need this one either...decided not to do the tiktok thing!!
+			var env = EnvGen.kr(Env.perc(\atk.kr(0.02),\rls.kr(0.5)),1,doneAction: 2);
+			var sig = SinOsc.ar(\freq.kr(300));
 			sig = sig*env;
-			sig = Pan2.ar(sig,pan,amp * ampScale);
-
-			Out.ar(outBus,sig);
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5) * ampScale);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		Ndef(\grainer,{
-			arg bufnum,rate=0.5,impulseTrig,pos=0.5, amp=1.0;
-			var sig,trig,noise,grainDur=1.0,bufDur;
+			var bufnum = \bufnum.kr;
+			var impulseTrig = \impulseTrig.kr;
+			var noise = impulseTrig.linexp(0.0,1.0,0.1,0.001);
+			var rate = (rate.linexp(0.0,1.0,0.5,2.0)) + LFNoise2.kr(0.08,0.1);
+			var trig = Impulse.kr(impulseTrig.linexp(0.0,1.0,0.3,12.0));
+			var bufDur = BufDur.kr(bufnum);
+			var pos = \pos.kr(0.5) + LFNoise1.kr(12,noise);
 
-			noise = impulseTrig.linexp(0.0,1.0,0.1,0.001);
-			rate = rate.linexp(0.0,1.0,0.5,2.0);
-			rate = rate + LFNoise2.kr(0.08,0.1);
-
-			trig = Impulse.kr(impulseTrig.linexp(0.0,1.0,0.3,12.0));
-			bufDur = BufDur.kr(bufnum);
-
-			pos = pos + LFNoise1.kr(12,noise);
-
-			sig = TGrains.ar(2,trig,bufnum,BufRateScale.kr(bufnum) * rate,pos * bufDur,grainDur,Latch.kr(LFNoise2.kr(0.05,0.7),trig),amp * ampScale);
+			TGrains.ar(2,trig,bufnum,BufRateScale.kr(bufnum) * \rate.kr(0.5),pos * bufDur,1.0,Latch.kr(LFNoise2.kr(0.05,0.7),trig),\amp.kr(1) * ampScale);
 		});
 	);
 
@@ -186,23 +163,20 @@ server.waitForBoot({
 	(
 		~funcs = Dictionary [
 
-			\blink -> {
-				arg frames = 20;
+			\blink -> { |frames = 20|
 				var window = Window("a",Window.screenBounds,false,false);
 
 				window.background_(Color.black).front;
 
 				Routine({
-					frames.do({
-						arg i;
+					frames.do({ |i|
 						window.alpha = (i * frames.reciprocal);
 						0.005.wait;
 					});
 
 					0.05.wait;
 
-					frames.do({
-						arg i;
+					frames.do({ |i|
 						window.alpha = 1 - (i * frames.reciprocal);
 						0.005.wait;
 					});
@@ -213,20 +187,17 @@ server.waitForBoot({
 
 			},
 
-			\clear -> {    // can pass the variable doc below into the first argument
-				arg document, start=0, end;
+			\clear -> { |document, start=0, end|                                                              // can pass the variable doc below into the first argument
 				document.string_("//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(2),start,end)
 			},
 
-			\fade -> {
-				arg frames = 200, pause = 1;
+			\fade -> { |frames=200, pause=1|
 				var window = Window("a",Window.screenBounds,false,false);
 
 				window.background_(Color.black).front.alwaysOnTop;
 
 				Routine({
-					frames.do({
-						arg i;
+					frames.do({ |i|
 						window.alpha = (i * frames.reciprocal);
 						0.005.wait;
 					});
@@ -238,13 +209,11 @@ server.waitForBoot({
 				}).play(AppClock);
 			},
 
-			\inked -> {
-				arg inks = 4, freq = 100;
+			\inked -> { |inks=4, freq=100|
 				var array = Array.fill(inks,{20.rand});
 
 				Routine({
-					array.do({
-						arg i;
+					array.do({ |i|
 						~funcs[\pix].value(path ++ "pix/ink/ink%.jpg".format(i),2.08,0,0);
 						freq.reciprocal.wait;
 						Window.closeAll;
@@ -252,11 +221,9 @@ server.waitForBoot({
 				}).play(AppClock);
 			},
 
-			\pix -> {
-				arg string,scale,x,y;
+			\pix -> { |string,scale,x,y|
 				var img = Image.open(string);
 				var rect = Rect(0,0,img.width * scale,img.height * scale);
-
 				var window = Window("nope",Rect(x,y,rect.width,rect.height),true,false)
 				.front
 				.background_(Color.clear);
@@ -266,8 +233,7 @@ server.waitForBoot({
 				});
 			},
 
-			\pixFadeIn -> {
-				arg string,scale,x,y,frames = 200;
+			\pixFadeIn -> { |string,scale,x,y,frames=200|
 				var img = Image.open(string);
 				var rect = Rect(0,0,img.width * scale,img.height * scale);
 
@@ -281,22 +247,18 @@ server.waitForBoot({
 				});
 
 				Routine({
-					frames.do({
-						arg i;
+					frames.do({ |i|
 						window.alpha = (i * frames.reciprocal);
 						0.005.wait;
 					});
 				}).play(AppClock);
 			},
 
-			\post -> {
-
-				arg string,rate=0.1,click=true;
+			\post -> { |string,rate=0.1,click=true|
 
 				if(click,{
 					Routine({
-						string.do({
-							arg i;
+						string.do({ |i|
 							i.post;
 							Synth(\klik,[\filtFreq,5000,\atk,0.001,\rls,0.001,\pan,0.5.rand2,\amp,0.05]);
 							rate.exprand(2*rate).wait
@@ -304,8 +266,7 @@ server.waitForBoot({
 					}).play;
 				},{
 					Routine({
-						string.do({
-							arg i;
+						string.do({ |i|
 							i.post;
 							rate.exprand(2*rate).wait
 						});
@@ -352,8 +313,7 @@ server.waitForBoot({
 				}).play(AppClock);
 			},
 
-			\wake -> {
-				arg frames = 400, pause = 3;
+			\wake -> { |frames=400, pause=3|
 				var window = Window("a",Window.screenBounds,false,false);
 
 				window
@@ -363,8 +323,7 @@ server.waitForBoot({
 				Routine({
 					pause.wait;
 
-					frames.do({
-						arg i;
+					frames.do({ |i|
 						window.alpha = 1 - (i * frames.reciprocal);
 						0.005.wait;
 					});
@@ -387,14 +346,13 @@ server.waitForBoot({
 
 			0 -> (
 				string: "falling off.",
-				func: {
-					arg document;
+				func: { |document|
 
 					Routine({
 						0.4.wait;
 						~funcs[\fade].value(200,1);
-						5.wait;
-						~funcs[\clear].value(document,0,1000);                //reevaluate
+						5.wait;                                                                  //reevaluate...try to tighten up this and all the other cues!
+						~funcs[\clear].value(document,0,1000);
 						Synth(\stereoPB,[\bufnum,~buffers[\ping],\rate,0.8.rrand(1.2),\amp,0.8]);
 						~funcs[\pix].value(path ++ "pix/letters/iota.png",1,150,50);
 						3.wait;
@@ -413,8 +371,7 @@ server.waitForBoot({
 			2 -> (
 				string: "amount",
 				func:{
-					~funcs[\post].value("...until heaven and earth pass away,\nnot an iota,\nnot a dot,\nwill pass from the Law until all is accomplished.\n
-Matthew 5:18\n",0.08)
+					~funcs[\post].value("...until heaven and earth pass away,\nnot an iota,\nnot a dot,\nwill pass from the Law until all is accomplished.\nMatthew 5:18\n",0.08)
 				}
 			),
 
@@ -511,8 +468,7 @@ Matthew 5:18\n",0.08)
 
 			9 -> (
 				string: "noise.",
-				func:{
-					arg document;
+				func:{ |document|
 					Routine({
 						Pdef(\phantom).stop;
 						0.4.wait;
@@ -544,8 +500,7 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 
 			12 -> (
 				string: "weren't there",
-				func:{
-					arg document;
+				func:{ |document|
 					Routine({
 						1.wait;
 						Synth(\stereoPB,[\bufnum,~buffers[\ping],\rate,0.8.rrand(1.2),\amp,0.8]);
@@ -592,9 +547,8 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 				string: "hearing",
 				func:{
 					Routine({
-						var left,right;
-						left = Synth(\sines,[\pan,-1]);
-						right = Synth(\sines,[\pan,1]);
+						var left = Synth(\sines,[\pan,-1]);
+						var right = Synth(\sines,[\pan,1]);
 						~funcs[\post].value("Bad news for a musician...\n",0.1,false);
 						4.wait;
 						right.set(\gate,0);
@@ -620,8 +574,7 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 
 			18 -> (
 				string: "differently",
-				func:{
-					arg document;
+				func:{ |document|
 					Routine({
 						var bounds = Window.screenBounds;
 						var window = Window("a",bounds,false,false);
@@ -698,12 +651,10 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 
 //  run the sucker!!
 (
-var date, doc;
-date = Date.getDate.format("%d/%m/%Y");
+var date = Date.getDate.format("%d/%m/%Y");
 
-doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(date));
-doc.keyDownAction = ({
-	arg view, char, modifiers, unicode, keycode;
+var doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(date));
+doc.keyDownAction = ({ |view, char, modifiers, unicode, keycode|
 
 	// [view, char, modifiers, unicode, keycode].postln;
 
@@ -711,9 +662,8 @@ doc.keyDownAction = ({
 
 		~text = ~text.rotate.put(0,unicode);
 
-		for(0,~cues.size-1,{
-			arg i;
-			if(~text[..~cues[i][\string].size-1].reverse == ~cues[i][\string].collectAs({arg i; i.asUnicode},Array),{
+		for(0,~cues.size-1,{ |i|
+			if(~text[..~cues[i][\string].size-1].reverse == ~cues[i][\string].collectAs({ |i| i.asUnicode},Array),{
 				~cues[i][\func].value(doc)
 			});
 		});
