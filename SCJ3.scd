@@ -42,3 +42,32 @@ i.pixels = i.pixels.sort;
 i.interpolation_(\fast);
 i.plot(name: "nil",bounds: Rect(400,400,i.width/2,i.height/2), showInfo: false)
 )
+
+
+
+
+
+
+// this worked pretty well, though ~cues was a dictionary of events
+// next time it can just be ("string" -> {func}) and the below code can be adjusted accordingly.
+
+(
+var date = Date.getDate.format("%d/%m/%Y");
+
+var doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(date));
+doc.keyDownAction = ({ |view, char, modifiers, unicode, keycode|
+
+	// [view, char, modifiers, unicode, keycode].postln;
+
+	if(char.isPrint,{
+
+		~text = ~text.rotate.put(0,unicode);
+
+		for(0,~cues.size-1,{ |i|
+			if(~text[..~cues[i][\string].size-1].reverse == ~cues[i][\string].collectAs({ |i| i.asUnicode},Array),{
+				~cues[i][\func].value(doc)
+			});
+		});
+	});
+});
+)

@@ -1,17 +1,17 @@
 /* SC Journal #2 */
 
 // post window zoom!!
-// post window wraps? yes/no
+// post window wraps - yes
 // main window wraps - yes
 // turn off bracket completion
+Server.default.options.device = "BlackHole 16ch"  // for recording
 
-//add to YT documentation
-~funcs[\post].value("Headphones interfere with the illusion!\n",0.3)
+// MOMENTO MORI
 
 (
 var server = Server.default;
-var path = "/Users/mikemccormick/Desktop/SCJ2/";              // folder of materials
-var ampScale = 0.53;                                          // do I need this? Or was this just for the shitty PA in Leveld?
+var path = "/Users/mikemccormick/Desktop/SCJ2/";       // folder of materials
+var ampScale = 1;                                   // do I need this (0.53)? Or was this just for the PA in Leveld?
 
 server.waitForBoot({
 
@@ -61,16 +61,6 @@ server.waitForBoot({
 	/* SynthDefs */
 
 	(
-		SynthDef(\phantomPB,{                                                        // don't think I need this synth!! change the below implementations to \monoPB
-			arg bufnum,rate=1,pan=0,amp=0.5,outBus=0;
-			var sig;
-
-			sig = PlayBuf.ar(1,bufnum,BufRateScale.kr(bufnum)*rate,doneAction:2);
-			sig = Pan2.ar(sig,pan,amp * ampScale);
-			Out.ar(outBus,sig);
-
-		}).add;
-
 		SynthDef(\monoPB,{
 			var bufnum = \bufnum.kr;
 			var sig = PlayBuf.ar(1,bufnum,BufRateScale.kr(bufnum) * \rate.kr(1),doneAction:2);
@@ -105,25 +95,16 @@ server.waitForBoot({
 
 		}).add;
 
-		SynthDef(\tik,{                                                            // don't think I need this one either...decided not to do the tiktok thing!!
-			var env = EnvGen.kr(Env.perc(\atk.kr(0.02),\rls.kr(0.5)),1,doneAction: 2);
-			var sig = SinOsc.ar(\freq.kr(300));
-			sig = sig*env;
-			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5) * ampScale);
-			Out.ar(\outBus.kr,sig);
-
-		}).add;
-
 		Ndef(\grainer,{
 			var bufnum = \bufnum.kr;
 			var impulseTrig = \impulseTrig.kr;
 			var noise = impulseTrig.linexp(0.0,1.0,0.1,0.001);
-			var rate = (rate.linexp(0.0,1.0,0.5,2.0)) + LFNoise2.kr(0.08,0.1);
+			var rate = (\rate.kr(0.5).linexp(0.0,1.0,0.5,2.0)) + LFNoise2.kr(0.08,0.1);
 			var trig = Impulse.kr(impulseTrig.linexp(0.0,1.0,0.3,12.0));
 			var bufDur = BufDur.kr(bufnum);
 			var pos = \pos.kr(0.5) + LFNoise1.kr(12,noise);
 
-			TGrains.ar(2,trig,bufnum,BufRateScale.kr(bufnum) * \rate.kr(0.5),pos * bufDur,1.0,Latch.kr(LFNoise2.kr(0.05,0.7),trig),\amp.kr(1) * ampScale);
+			TGrains.ar(2,trig,bufnum,BufRateScale.kr(bufnum) * rate,pos * bufDur,1.0,Latch.kr(LFNoise2.kr(0.05,0.7),trig),\amp.kr(1) * ampScale);
 		});
 	);
 
@@ -135,21 +116,21 @@ server.waitForBoot({
 		Pdef(\phantom,
 			Ppar([
 				Pbind(
-					\instrument, \phantomPB,
+					\instrument, \monoPB,
 					\dur,0.25,
 					\bufnum,Pseq([~buffers[\deutsch][6],~buffers[\deutsch][7]],inf),
 					\rate,1,
 					\pan,-1,
-					\amp,Pseq([Pseg([0,0.5],15,\lin,1),Pseq([0.5],inf)],1) * ampScale,
+					\amp,Pseq([Pseg([0,0.5],15,\lin,1),Pseq([0.5],inf)],1),
 					\outBus,0
 				),
 				Pbind(
-					\instrument, \phantomPB,
+					\instrument, \monoPB,
 					\dur,0.25,
 					\bufnum,Pseq([~buffers[\deutsch][7],~buffers[\deutsch][6]],inf),
 					\rate,1,
 					\pan,1,
-					\amp,Pseq([Pseg([0,0.5],15,\lin,1),Pseq([0.5],inf)],1) * ampScale,
+					\amp,Pseq([Pseg([0,0.5],15,\lin,1),Pseq([0.5],inf)],1),
 					\outBus,0
 			)],inf)
 
@@ -187,13 +168,12 @@ server.waitForBoot({
 
 			},
 
-			\clear -> { |document, start=0, end|                                                              // can pass the variable doc below into the first argument
+			\clear -> { |document, start=0, end|                                                   // can pass the variable doc below into the first argument
 				document.string_("//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(2),start,end)
 			},
 
 			\fade -> { |frames=200, pause=1|
 				var window = Window("a",Window.screenBounds,false,false);
-
 				window.background_(Color.black).front.alwaysOnTop;
 
 				Routine({
@@ -221,11 +201,23 @@ server.waitForBoot({
 				}).play(AppClock);
 			},
 
+
+			\pedant -> {
+				var bounds = Window.screenBounds;
+				var window = Window("a",Rect(bounds.width * 0.75,bounds.height * 0.25,250,125),false,false);
+
+				StaticText(window,Rect(0, 0, 250, 125) )
+				.string_("PEDANT")
+				.align_(\center)
+				.font_(Font("menlo",60,true));
+
+				window.front;
+			},
+
 			\pix -> { |string,scale,x,y|
 				var img = Image.open(string);
 				var rect = Rect(0,0,img.width * scale,img.height * scale);
-				var window = Window("nope",Rect(x,y,rect.width,rect.height),true,false)
-				.front
+				var window = Window("nope",Rect(x,y,rect.width,rect.height),true,false).front
 				.background_(Color.clear);
 
 				window.drawFunc_({
@@ -237,8 +229,7 @@ server.waitForBoot({
 				var img = Image.open(string);
 				var rect = Rect(0,0,img.width * scale,img.height * scale);
 
-				var window = Window("nope",Rect(x,y,rect.width,rect.height),true,false)
-				.front
+				var window = Window("nope",Rect(x,y,rect.width,rect.height),true,false).front
 				.background_(Color.clear)
 				.alpha_(0);
 
@@ -268,7 +259,7 @@ server.waitForBoot({
 					Routine({
 						string.do({ |i|
 							i.post;
-							rate.exprand(2*rate).wait
+							rate.exprand(2*rate).wait;
 						});
 					}).play;
 				})
@@ -313,14 +304,13 @@ server.waitForBoot({
 				}).play(AppClock);
 			},
 
-			\wake -> { |frames=400, pause=3|
+			\wake -> { |frames=400, pause=3|                                         // this doesn't ever happen? Should it be incorporated somewhere?
 				var window = Window("a",Window.screenBounds,false,false);
 
-				window
-				.background_(Color.black)
-				.front;
+				window.background_(Color.black).front;
 
 				Routine({
+
 					pause.wait;
 
 					frames.do({ |i|
@@ -329,9 +319,8 @@ server.waitForBoot({
 					});
 
 					window.close;
-
 				}).play(AppClock);
-			}
+			},
 		]
 	);
 
@@ -351,7 +340,7 @@ server.waitForBoot({
 					Routine({
 						0.4.wait;
 						~funcs[\fade].value(200,1);
-						5.wait;                                                                  //reevaluate...try to tighten up this and all the other cues!
+						5.wait;                                     //reevaluate...try to tighten up this and all the other cues!
 						~funcs[\clear].value(document,0,1000);
 						Synth(\stereoPB,[\bufnum,~buffers[\ping],\rate,0.8.rrand(1.2),\amp,0.8]);
 						~funcs[\pix].value(path ++ "pix/letters/iota.png",1,150,50);
@@ -369,33 +358,32 @@ server.waitForBoot({
 			),
 
 			2 -> (
-				string: "amount",
-				func:{
-					~funcs[\post].value("...until heaven and earth pass away,\nnot an iota,\nnot a dot,\nwill pass from the Law until all is accomplished.\nMatthew 5:18\n",0.08)
+				string: "amount.",
+				func: {
+					~funcs[\post].value("...until heaven and earth pass away,\nnot an iota,\nnot a dot,\nwill pass from the Law until all is accomplished.\n\nMatthew 5:18\n",0.08)
 				}
 			),
 
 			3 -> (
-				string: "introspection",
-				func:{
-
-					// check to see if the clicks interfere with the recording!
-
+				string: "introspect",
+				func: {
 					Routine({
 						Synth(\monoPB,[\bufnum,~buffers[\breakthrough][0]]);
 						1.wait;
-						~funcs[\post].value("I recorded this while walking to the metro station\n",0.08);
+						~funcs[\post].value("I recorded this while walking to the metro station\n\n",0.08);
 						6.5.wait;
 						Synth(\monoPB,[\bufnum,~buffers[\breakthrough][1]]);
 						1.7.wait;
-						~funcs[\post].value("in Istanbul\n",0.08);
+						~funcs[\post].value("in Istanbul\n\n",0.08);
 						1.4.wait;
 						Synth(\monoPB,[\bufnum,~buffers[\breakthrough][2]]);
 						2.7.wait;
-						~funcs[\post].value("alone...\n",0.05);
-						1.2.wait;
+						~funcs[\post].value("alone...\n\n",0.05);
+						0.6.wait;
+						~funcs[\post].value("          ",0.15,false);
+						0.6.wait;
 						Synth(\monoPB,[\bufnum,~buffers[\breakthrough][3]]);
-						0.5.wait;
+						1.5.wait;
 						~funcs[\post].value("...also alone...\n",0.15);
 					}).play;
 				}
@@ -403,28 +391,39 @@ server.waitForBoot({
 
 			4 -> (
 				string: "destinat",
-				func:{
-					Synth(\monoPB,[\bufnum,~buffers[\breakthrough][4]]);
+				func: { |document|
+					Routine({
+						Synth(\monoPB,[\bufnum,~buffers[\breakthrough][4]]);
+						33.wait;
+						~funcs[\clear].value(Document.current,0,1000);
+					}).play;
 				}
 			),
 
 			5 -> (
 				string: "season",
-				func:{
+				func: {
 					~funcs[\post].value("or during a global pandemic...\n",0.12);
 				}
 			),
 
 			6 -> (
-				string: "monotony",
-				func:{
+				string: "repetetive",
+				func: {
 					Pdef(\phantom).play;
 				}
 			),
 
 			7 -> (
-				string: "unconscious",
-				func:{
+				string: "illusion.",
+				func: {
+					~funcs[\post].value("Headphones interfere with the illusion!\n",0.1,false)
+				}
+			),
+
+			8 -> (
+				string: "unconscious.",
+				func: {
 					~funcs[\post].value(
 						"     __..,,... ,,,,,,.\n" ++
 						"''''        , '        `.\n" ++
@@ -439,22 +438,23 @@ server.waitForBoot({
 				}
 			),
 
-			8 -> (
+			9 -> (
 				string: "punctuation",
-				func:{
+				func: {
 					Pdef(\phantom,
 						Ppar([
 							Pbind(
-								\instrument, \phantomPB,
+								\instrument, \monoPB,
 								\dur,0.25,
 								\bufnum,Pseq([~buffers[\deutsch][6],~buffers[\deutsch][7]],inf),
 								\rate,1,
 								\pan,-1,
-								\amp,Pseq([0.5],inf),
+								\amp,Pseq([0.5],inf),                                               // maybe the amp should * -3.dbamp ??
+
 								\outBus,0
 							),
 							Pbind(
-								\instrument, \phantomPB,
+								\instrument, \monoPB,
 								\dur,0.25,
 								\bufnum,Pseq([~buffers[\deutsch][6],~buffers[\deutsch][7]],inf),
 								\rate,1,
@@ -466,9 +466,9 @@ server.waitForBoot({
 				}
 			),
 
-			9 -> (
-				string: "noise.",
-				func:{ |document|
+			10 -> (
+				string: "noise.",                                                                     //MAKE Pdef(\phantom) FADE OUT?
+				func: { |document|
 					Routine({
 						Pdef(\phantom).stop;
 						0.4.wait;
@@ -483,26 +483,41 @@ server.waitForBoot({
 				}
 			),
 
-			10 -> (
-				string: "abstraction",
-				func:{
-					~funcs[\post].value("\"In this state, there is an unlimited mutual interpenetration between images, objects and concepts: opposites are undone, inner and outer worlds merge, death and birth become one, and the restrictions of space and time are dissolved.\"\n
-Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity and in the Analysis of Visual Artworks.\nJournal of aesthetic education, 49 (3), 15-31.\nRetrieved from http://www.jstor.org/stable/10.5406/jaesteduc.49.3.0015\n",0.08)
-				}
-			),
-
 			11 -> (
-				string: "trance...",
-				func:{
-					~funcs[\inked].value(2);
+				string: "oceanic",
+				func: {
+					~funcs[\post].value("\"In this state, there is an unlimited mutual interpenetration between images, objects and concepts: opposites are undone, inner and outer worlds merge, death and birth become one, and the restrictions of space and time are dissolved.\"\n
+Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity and in the Analysis of Visual Artworks.\nJournal of aesthetic education, 49 (3), 15-31.",0.08);
 				}
 			),
 
 			12 -> (
-				string: "weren't there",
-				func:{ |document|
+				string: "others",
+				func: {
 					Routine({
-						1.wait;
+
+						6.do({
+							~funcs[\pedant].value;
+							0.8.wait;
+							Window.closeAll;
+							0.8.wait;
+						})
+					}).play(AppClock)
+				}
+			),
+
+			13 -> (
+				string: "trance...",
+				func: {
+					~funcs[\inked].value(2,8);
+				}
+			),
+
+			14 -> (
+				string: "weren't there",
+				func: { |document|
+					Routine({
+						3.wait;
 						Synth(\stereoPB,[\bufnum,~buffers[\ping],\rate,0.8.rrand(1.2),\amp,0.8]);
 						~funcs[\clear].value(document,0,2000);
 						~funcs[\pix].value(path ++ "pix/letters/theta.png",1,150,50);
@@ -512,28 +527,16 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 				}
 			),
 
-			13 -> (
+			15 -> (
 				string: "usual:",
-				func:{
+				func: {
 					~funcs[\inked].value(3);
 				}
 			),
 
-			14 -> (
-				string: "blood tests",
-				func:{
-					Routine({
-						~funcs[\pix].value(path ++ "pix/docEdit.png",0.5,250,250);
-						~funcs[\post].value("That doesn't sound promising...\n",0.1,true);
-						6.5.wait;
-						Window.closeAll
-					}).play(AppClock)
-				}
-			),
-
-			15 -> (
+			16 -> (
 				string: "hometown",
-				func:{
+				func: {
 					Routine({
 						~funcs[\pix].value(path ++ "pix/funeral.png",1,350,300);
 						~funcs[\post].value("Unorthodox, but essential, I guess...\n",0.1,true);
@@ -543,9 +546,24 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 				}
 			),
 
-			16 -> (
+			17 -> (
+				string: "tests",
+				func: {
+					Routine({
+						~funcs[\pix].value(path ++ "pix/docEditNor.png",0.5,250,250);
+						2.wait;
+						~funcs[\pixFadeIn].value(path ++ "pix/docEditEng.png",0.5,250,250,125);
+						4.wait;
+						~funcs[\post].value("That doesn't sound promising...\n",0.1,true);
+						6.wait;
+						Window.closeAll
+					}).play(AppClock)
+				}
+			),
+
+			18 -> (
 				string: "hearing",
-				func:{
+				func: {
 					Routine({
 						var left = Synth(\sines,[\pan,-1]);
 						var right = Synth(\sines,[\pan,1]);
@@ -558,9 +576,9 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 				}
 			),
 
-			17 -> (
+			19 -> (
 				string: "Mike McCor",
-				func:{
+				func: {
 					Routine({
 						Ndef(\grainer).set(\bufnum,~buffers[\pingMono],\impulseTrig,1,\rate,0.9,\pos,0.15,\amp,0.5);
 						Ndef(\grainer).play(fadeTime:4);
@@ -572,9 +590,9 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 				}
 			),
 
-			18 -> (
-				string: "differently",
-				func:{ |document|
+			20 -> (
+				string: "differently:",
+				func: { |document|
 					Routine({
 						var bounds = Window.screenBounds;
 						var window = Window("a",bounds,false,false);
@@ -605,41 +623,44 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 						8.wait;
 
 						Synth(\stereoPB,[\bufnum,~buffers[\ping],\rate,14,\amp,0.35]);
-						Ndef(\grainer).stop(fadeTime: 4);
+						Ndef(\grainer).stop(fadeTime: 8);
 						~funcs[\clear].value(document,0,2000);
 						Window.closeAll
 					}).play(AppClock)
 				}
 			),
 
-			19 -> (
-				string: "1973 book",
-				func:{
+			21 -> (
+				string: "book",
+				func: {
 					~funcs[\post].value("Is it obvious I've been reading a lot recently?\n",0.08)
 				}
 			),
 
-			20 -> (
-				string: "purpose",
-				func:{
+			22 -> (
+				string: "purpose.",
+				func: {
 					~funcs[\post].value("Examples of immortality projects:\n-children\n-a garden\n-sourdough bread\n-\"art\" about your neuroses that will live on the internet forever\n\n",0.1)
 				}
 			),
 
-			21 -> (
-				string: "entirely",
-				func:{
+			23 -> (
+				string: "luxury",
+				func: {
 					Routine({
-
+						1.wait;
 						~funcs[\post].value("Geoffrey Scarre commenting on\nMartin Heidegger commenting on\nJean Paul Sartre",0.05,false);
 						Synth(\stereoPB,[\bufnum,~buffers[\death],\amp,0.5]);
 						59.wait;
 						30.do({
 							~funcs[\pix].value(path ++ "pix/ink/ink%.jpg".format(20.rand),2.08,0,0);
 							0.05.wait;
+							Window.closeAll;
 						});
 						~funcs[\pix].value(path ++ "pix/ink/ink%.jpg".format(20.rand),2.08,0,0);
+						0.8.wait;
 						~funcs[\fade].value(250,20);
+						40.wait;
 						Window.closeAll;
 					}).play(AppClock)
 				}
@@ -649,11 +670,13 @@ Saarinen, J. (2015).\nThe Concept of the Oceanic Feeling in Artistic Creativity 
 });
 );
 
+
 //  run the sucker!!
 (
-var date = Date.getDate.format("%d/%m/%Y");
+// var date = Date.getDate.format("%d/%m/%Y");
+var date = "23/08/2020";
+var doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\ns\n\n\n\n\n\n\n*/".format(date));
 
-var doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(date));
 doc.keyDownAction = ({ |view, char, modifiers, unicode, keycode|
 
 	// [view, char, modifiers, unicode, keycode].postln;

@@ -1,21 +1,25 @@
-//before startup - clean up Preview and NicePlayer
+// upon revisiting this code - I would certainly do a lot of things differently/more efficiently!! Plenty of redundancy here...
 
-//probably need to edit the pathnames for this to work again...
+/////
+
+/* before startup - clean up Preview and NicePlayer */
 
 (
-Server.default.waitForBoot({
+var server = Server.default;
+var path = "/Users/mikemccormick/Desktop/SCJ1/";       // folder of materials
+
+server.waitForBoot({
 
 	//////////Collections//////////
 	(
 		~string = Array.fill(13,{0});
 		~diary = Dictionary.new;
-		~diary.add(\tracks-> PathName("/Users/mikemccormick/Desktop/SCJournal/vsounds/diary/").entries.collect({
-			arg sf;
-			Buffer.read(s,sf.fullPath);
+		~diary.add(\tracks-> PathName(path ++ "vsounds/diary/").entries.collect({ |sf|
+			Buffer.read(server,sf.fullPath);
 		});
 		);
 		~tracks = Array.fill(~diary[\tracks].size,{0});
-		~loop = Buffer.read(s,"/Users/mikemccormick/Desktop/SCJournal/vsounds/loop.wav");
+		~loop = Buffer.read(server,path ++ "vsounds/loop.wav");
 	);
 
 	s.sync;
@@ -28,116 +32,96 @@ Server.default.waitForBoot({
 
 	(
 		SynthDef(\playback,{
-			arg bufnum,startPos=0,atk=1,rls=1,gate=1,amp=0.5,outBus=0;
-			var sig,env;
-
-			env = EnvGen.kr(Env.asr(atk,1,rls,1),gate,doneAction:2);
-			sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum),startPos: BufFrames.kr(bufnum) * startPos);
-			sig = Pan2.ar(sig.sum,LFNoise2.kr(0.2),amp);
-			Out.ar(outBus,sig*env);
+			var bufnum = \bufnum.kr;
+			var env = EnvGen.kr(Env.asr(\atk.kr(1),1,\rls.kr(1),1),\gate.kr(1),doneAction:2);
+			var sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum),startPos: BufFrames.kr(bufnum) * \startPos.kr(0));
+			sig = Pan2.ar(sig.sum,LFNoise2.kr(0.2),\amp.kr(0.5));
+			Out.ar(\outBus.kr(0),sig * env);
 
 		}).add;
 
 		SynthDef(\playbackStereo,{
-			arg bufnum,rate=1,atk=1,rls=1,gate=1,amp=0.5,outBus=0;
-			var sig,env;
-
-			env = EnvGen.kr(Env.asr(atk,1,rls,1),gate,doneAction:2);
-			sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum)*rate,loop: 1);
-			sig = Pan2.ar(sig,0,amp);
-			Out.ar(outBus,sig*env);
+			var bufnum = \bufnum.kr;
+			var env = EnvGen.kr(Env.asr(\atk.kr(1),1,\rls.kr(1),1),\gate.kr(1),doneAction:2);
+			var sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum) * \rate.kr(1),loop: 1);
+			sig = Pan2.ar(sig,0,\amp.kr);
+			Out.ar(\outBus.kr(0),sig * env);
 
 		}).add;
 
 		SynthDef(\player,{
-			arg bufnum,startPos=0,atk=1,rls=1,gate=1,amp=0.5,outBus=0;
-			var sig,env;
-
-			env = EnvGen.kr(Env.asr(atk,1,rls,1),gate,doneAction:2);
-			sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum),startPos: BufFrames.kr(bufnum) * startPos);
-			sig = Pan2.ar(sig.sum,LFNoise2.kr(0.3),amp*LFNoise2.kr(0.4).range(0.1,1.0));
-			Out.ar(outBus,sig*env);
+			var bufnum = \bufnum.kr;
+			var env = EnvGen.kr(Env.asr(\atk.kr(1),1,\rls.kr(1),1),\gate.kr(1),doneAction:2);
+			var sig = PlayBuf.ar(2,bufnum,BufRateScale.kr(bufnum),startPos: BufFrames.kr(bufnum) * \startPos.kr(0));
+			sig = Pan2.ar(sig.sum,LFNoise2.kr(0.3),\amp.kr(0.5) * LFNoise2.kr(0.4).range(0.1,1.0));
+			Out.ar(\outBus.kr(0),sig * env);
 
 		}).add;
 
 		SynthDef(\sinSynth, {
-			arg freq=440,filtfreq=500,atk=0.1,rls=1.0,gate=1,pan=0,amp=0.4;
-			var env,sig;
-
-			env = EnvGen.kr(Env([0,1,0],[atk,rls]),gate,doneAction: 2);
-			sig = SinOsc.ar(freq)*BrownNoise.ar(0.5,0.5);
-			sig = RLPF.ar(sig, filtfreq);
+			var env = EnvGen.kr(Env([0,1,0],[\atk.kr(0.1),\rls.kr(1.0)]),\gate.kr(1),doneAction: 2);
+			var sig = SinOsc.ar(\freq.kr(440))*BrownNoise.ar(0.5,0.5);
+			sig = RLPF.ar(sig, \filtfreq.kr(500));
 			sig = BHiShelf.ar(sig,2800,db: -10);
-			sig = Pan2.ar(sig,pan,amp);
-			sig = sig*env;
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.4));
+			sig = sig * env;
 
-			Out.ar(0,sig);
+			Out.ar(\outBus.kr(0),sig);
 
 		}).add;
 
 		SynthDef(\klik,{
-			arg filtFreq=2000,atk=0.02,rls=0.5,pan=0,outBus,amp=0.5;
-			var env,sig;
+			var env = EnvGen.kr(Env.perc(\atk.kr(0.02),\rls.kr(0.5)),1,doneAction: 2);
+			var sig = WhiteNoise.ar(1!2).sum;
+			sig = BPF.ar(sig,\filtFreq.kr(2000),0.8,25).clip(-1,1);
+			sig = sig * env;
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5));
 
-			env = EnvGen.kr(Env.perc(atk,rls),1,doneAction: 2);
-
-			sig = WhiteNoise.ar(1!2).sum;
-			sig = BPF.ar(sig,filtFreq,0.8,25).clip(-1,1);
-			sig = sig*env;
-			sig = Pan2.ar(sig,pan,amp);
-
-			Out.ar(outBus,sig);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		SynthDef(\glitch,{
-			arg filtFreq=2000,atk=0.02,rls=0.5,pan=0,dly=0.8,outBus,amp=0.5;
-			var env,sig;
+			var env = EnvGen.kr(Env.perc(\atk.kr(0.02),\rls.kr(0.5)),1,doneAction: 2);
+			var sig = WhiteNoise.ar(1!2).sum;
+			sig = BPF.ar(sig,\filtFreq.kr(2000),0.8,25).clip(-1,1);
+			sig = sig * env;
+			sig = CombC.ar(sig,0.1,\dly.kr(0.8),1.0);
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5));
 
-			env = EnvGen.kr(Env.perc(atk,rls),1,doneAction: 2);
-
-			sig = WhiteNoise.ar(1!2).sum;
-			sig = BPF.ar(sig,filtFreq,0.8,25).clip(-1,1);
-			sig = sig*env;
-			sig = CombC.ar(sig,0.1,dly,1.0);
-			sig = Pan2.ar(sig,pan,amp);
-
-			Out.ar(outBus,sig);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		SynthDef(\bump,{
-			arg freq=80,harms=2,atk=0.02,rls=0.5,pan=0,outBus,amp=0.5;
-			var env,sig;
+			var atk = \atk.kr(0.02);
+			var env = EnvGen.kr(Env([0,1,1,0],[atk,\rls.kr(0.5),atk],\exp),1,doneAction: 2);
+			var sig = SinOsc.ar(\freq.kr(80) * [1,2],mul: \harms.kr(2)).tanh.sum;
+			sig = sig * env;
+			sig = Pan2.ar(sig,\pan.kr(0),\amp.kr(0.5));
 
-			env = EnvGen.kr(Env([0,1,1,0],[atk,rls,atk],\exp),1,doneAction: 2);
-
-			sig = SinOsc.ar(freq*[1,2],mul: harms).tanh.sum;
-			sig = sig*env;
-			sig = Pan2.ar(sig,pan,amp);
-
-			Out.ar(outBus,sig);
+			Out.ar(\outBus.kr,sig);
 
 		}).add;
 
 		SynthDef(\pmSynth2,{
-			arg carfreq=200, modfreq=1,index=0,rate=4,boop=10,atk=0.01,rls=0.4,filt=12000,gate=1,pan1=0,amp=0.3,bus=0,modFB=0;
-			var env,mod,wobble,sig;
+			var carfreq = \carfreq.kr(200);
+			var modfreq = \modfreq.kr(1);
+			var rate = \rate.kr(4);
+			var wobble = LFNoise0.kr(rate * LFNoise0.kr(rate).range(0.5,2.0),\boop.kr(10)).abs;
+			var mod = SinOscFB.ar(modfreq * wobble.reciprocal * 2,\modFB.kr(0) * wobble);
 
-			wobble = LFNoise0.kr(rate*LFNoise0.kr(rate).range(0.5,2.0),boop).abs;
-			mod = SinOscFB.ar(modfreq*wobble.reciprocal*2,modFB*wobble);
+			var sig = PMOsc.ar([carfreq,carfreq*1.05]*wobble,modfreq,\index.kr(0),mod,mod,mod);
 
-			sig = PMOsc.ar([carfreq,carfreq*1.05]*wobble,modfreq,index,mod,mod,mod);
+			var env = EnvGen.kr(Env.asr(\atk.kr(0.01),1,\rls.kr(0.4)),\gate.kr(1),doneAction: 2);
 
-			env = EnvGen.kr(Env.asr(atk,1,rls),gate,doneAction: 2);
-
-			sig = sig*env;
+			sig = sig * env;
 			sig = CombC.ar(sig,0.02,0.02,0.5);
-			sig = LPF.ar(sig,filt);
+			sig = LPF.ar(sig,\filt.kr(12000));
 			sig = BLowShelf.ar(sig,60,1,-12);
 			sig = LeakDC.ar(sig);
 
-			Out.ar(bus,sig*amp);
+			Out.ar(\bus.kr,sig * \amp.kr(0.3));
 
 		}).add;
 	);
@@ -152,8 +136,7 @@ Server.default.waitForBoot({
 				Pbindef(
 					\klikker,
 					\instrument,\klik,
-					\dur,Prand([1/4,1/8,Pseq((1/16)!2,1)],inf),//put it more on the grid
-					// \dur, Pseq([1],inf),
+					\dur,Prand([1/4,1/8,Pseq((1/16)!2,1)],inf),
 					\filtFreq,12000,
 					\atk,0.001,
 					\rls,0.001,
@@ -214,6 +197,7 @@ Server.default.waitForBoot({
 				\amp,Pwhite(0.2,0.35,inf),
 				\atk,Pwhite(10.0,12.0,inf),
 				\rls,Pwhite(10.0,12.0,inf),
+				\outBus,0,
 			)
 		);
 	);
@@ -228,21 +212,15 @@ Server.default.waitForBoot({
 			//months...
 			\flash0 -> Routine({
 				var screenB = Window.screenBounds;
-				var routine;
+				var routine = Routine({
+					200.do({ |index|
+						var	word = ["you","are","not","enough"].wchoose([1,1,1.25,1.25].normalizeSum);
 
-				routine = Routine({
-					200.do({
-						arg index;
-						var window,word,rect,text,size;
+						var rect = Rect(screenB.width.rand,screenB.height.rand,(screenB.width/2).rand,(screenB.height/2).rand);
+						var size = if(rect.width > rect.height,{rect.height/4},{rect.width/4});
 
-						word = ["you","are","not","enough"].wchoose([1,1,1.25,1.25].normalizeSum);
-
-						rect = Rect(screenB.width.rand,screenB.height.rand,(screenB.width/2).rand,(screenB.height/2).rand);
-						size = if(rect.width > rect.height,{rect.height/4},{rect.width/4});
-
-						window = Window("%".format(index),rect,border: false);
-						window.background_(Color.rand(0.25,0.6));
-						text = StaticText(window,Rect(0,0,rect.width,rect.height));
+						var	window = Window("%".format(index),rect,border: false).background_(Color.rand(0.25,0.6));
+						var text = StaticText(window,Rect(0,0,rect.width,rect.height));
 						text.string = "%".format(word);
 						text.align = \center;
 						text.font = Font("Arial",size,true);
@@ -263,21 +241,15 @@ Server.default.waitForBoot({
 			//the artist
 			\flash1 -> Routine({
 				var screenB = Window.screenBounds;
-				var routine;
+				var routine = Routine({
+					200.do({ |index|
+						var word = ["you","are","too","much"].wchoose([1,1,1.25,1.25].normalizeSum);
 
-				routine = Routine({
-					200.do({
-						arg index;
-						var window,word,rect,text,size;
+						var rect = Rect(screenB.width.rand,screenB.height.rand,(screenB.width/2).rand,(screenB.height/2).rand);
+						var size = if(rect.width > rect.height,{rect.height/4},{rect.width/4});
 
-						word = ["you","are","too","much"].wchoose([1,1,1.25,1.25].normalizeSum);
-
-						rect = Rect(screenB.width.rand,screenB.height.rand,(screenB.width/2).rand,(screenB.height/2).rand);
-						size = if(rect.width > rect.height,{rect.height/4},{rect.width/4});
-
-						window = Window("%".format(index),rect,border: false);
-						window.background_(Color.rand(0.25,0.6));
-						text = StaticText(window,Rect(0,0,rect.width,rect.height));
+						var window = Window("%".format(index),rect,border: false).background_(Color.rand(0.25,0.6));
+						var text = StaticText(window,Rect(0,0,rect.width,rect.height));
 						text.string = "%".format(word);
 						text.align = \center;
 						text.font = Font("Arial",size,true);
@@ -298,21 +270,16 @@ Server.default.waitForBoot({
 			//understanding
 			\flash2 -> Routine({
 				var screenB = Window.screenBounds;
-				var routine;
+				var routine = Routine({
+					200.do({ |index|
 
-				routine = Routine({
-					200.do({
-						arg index;
-						var window,word,rect,text,size;
+						var word = ["you're","full","of","shit"].wchoose([1,1,1.25,1.25].normalizeSum);
 
-						word = ["you're","full","of","shit"].wchoose([1,1,1.25,1.25].normalizeSum);
+						var rect = Rect(screenB.width.rand,screenB.height.rand,(screenB.width/2).rand,(screenB.height/2).rand);
+						var size = if(rect.width > rect.height,{rect.height/4},{rect.width/4});
 
-						rect = Rect(screenB.width.rand,screenB.height.rand,(screenB.width/2).rand,(screenB.height/2).rand);
-						size = if(rect.width > rect.height,{rect.height/4},{rect.width/4});
-
-						window = Window("%".format(index),rect,border: false);
-						window.background_(Color.rand(0.25,0.6));
-						text = StaticText(window,Rect(0,0,rect.width,rect.height));
+						var window = Window("%".format(index),rect,border: false).background_(Color.rand(0.25,0.6));
+						var text = StaticText(window,Rect(0,0,rect.width,rect.height));
 						text.string = "%".format(word);
 						text.align = \center;
 						text.font = Font("Arial",size,true);
@@ -335,11 +302,8 @@ Server.default.waitForBoot({
 				var routine;
 
 				routine = Routine({
-					6.do({
-						arg index;
-						var pipe;
-
-						pipe = Pipe("open /Users/mikemccormick/Desktop/SCJournal/videos/v%.mp4".format(index), "w");
+					6.do({ |index|
+						var pipe = Pipe("open %/videos/v%.mp4".format(path,index), "w");
 						pipe.close;
 						0.5.wait;
 					});
@@ -349,11 +313,8 @@ Server.default.waitForBoot({
 
 			//Norway
 			\visa -> Routine({
-				2.do({
-					arg index;
-					var pipe;
-
-					pipe = Pipe("open /Users/mikemccormick/Desktop/SCJournal/vpictures/p%.jpg".format(index), "w");
+				2.do({ |index|
+					var pipe = Pipe("open %vpictures/p%.jpg".format(path,index), "w");
 					pipe.close;
 					1.wait;
 
@@ -363,11 +324,8 @@ Server.default.waitForBoot({
 			//heartbreak
 			\heartbroke -> Routine({
 				var wait = 4;
-				15.do({
-					arg index;
-					var pipe;
-
-					pipe = Pipe("open /Users/mikemccormick/Desktop/SCJournal/vpictures/p%.jpg".format(index+2), "w");
+				15.do({ |index|
+					var pipe = Pipe("open %vpictures/p%.jpg".format(path,index+2), "w");
 					pipe.close;
 					wait = wait * 0.75;
 					wait.wait;
@@ -376,8 +334,7 @@ Server.default.waitForBoot({
 
 			//the artist
 			\johanna -> {
-				var pipe;
-				pipe = Pipe("open -a Safari https://johannalettmayer.net/", "w");
+				var pipe = Pipe("open -a Safari https://johannalettmayer.net/", "w");
 				pipe.close;
 			},
 
@@ -401,7 +358,7 @@ Server.default.waitForBoot({
 					vow = {vow.wchoose((8..1).normalizeSum)}!(rand + 2.rand);
 					word = con ++ vow;
 					word = word.perfectShuffle;
-					for(0,word.size-1,{arg i; newWord = newWord ++ word[i]});
+					for(0,word.size-1,{ |i| newWord = newWord ++ word[i]});
 
 					// newWord.postln;
 					pipe = Pipe("say -v % %".format(voice,newWord), "w");
@@ -423,7 +380,7 @@ Server.default.waitForBoot({
 					vow = {vow.wchoose((8..1).normalizeSum)}!(rand + 2.rand);
 					word = con ++ vow;
 					word = word.perfectShuffle;
-					for(0,word.size-1,{arg i; newWord = newWord ++ word[i]});
+					for(0,word.size-1,{ |i| newWord = newWord ++ word[i]});
 
 					// newWord.postln;
 					pipe = Pipe("say -v % %".format(voice,newWord), "w");
@@ -434,8 +391,7 @@ Server.default.waitForBoot({
 
 			//opposite
 			\playMemos -> {
-				~diary[\tracks].size.do({
-					arg index;
+				~diary[\tracks].size.do({ |index|
 
 					if(index < 2,
 						{
@@ -447,8 +403,7 @@ Server.default.waitForBoot({
 			},
 
 			\stopMemos -> {
-				~diary[\tracks].size.do({
-					arg index;
+				~diary[\tracks].size.do({ |index|
 
 					~tracks[index].set(\rls,10 + index,\gate,0);
 				})
@@ -461,14 +416,14 @@ Server.default.waitForBoot({
 )
 
 
-(
-var date, doc;
-// date = Date.getDate.format("%d/%m/%Y");
-date = "17/12/2019";
+// this is so much cleaner in SCJ2!!!
 
-doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(date));
-doc.keyDownAction = ({
-	arg view, char, modifiers, unicode, keycode;
+(
+// date = Date.getDate.format("%d/%m/%Y");
+var date = "17/12/2019";
+
+var doc = Document("SC Journal %".format(date),"//SC Journal %\n\n/*\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n*/".format(date));
+doc.keyDownAction = ({ |view, char, modifiers, unicode, keycode|
 
 	Synth(\klik,[\filtFreq,5000,\atk,0.001,\rls,0.001,\pan,0.5.rand2,\amp,0.2]);
 
@@ -486,7 +441,7 @@ doc.keyDownAction = ({
 		//experiences
 		{~string[0..10].reverse == [101,120,112,101,114,105,101,110,99,101,115]}{~funcs[\bands].value}
 		//come to mind
-		{~string[0..11].reverse == [99,111,109,101,32,116,111,32,109,105,110,100]}{~joao = Synth(\playbackStereo,[\bufnum,~loop.bufnum,\rate,-0.5,\atk,0.1,\rls,0.1,\gate,1,\amp,0.8,\outBus,0])}
+		{~string[0..11].reverse == [99,111,109,101,32,116,111,32,109,105,110,100]}{~joao = Synth(\playbackStereo,[\bufnum,~loop.bufnum,\rate,0.5.neg,\atk,0.1,\rls,0.1,\gate,1,\amp,0.8,\outBus,0])}
 
 		//Norway
 		{~string[0..5].reverse == [78,111,114,119,97,121]}{~funcs[\visa].play}
@@ -496,8 +451,7 @@ doc.keyDownAction = ({
 		{~string[0..6].reverse == [115,117,105,99,105,100,101]}{
 			~joao.set(\rls,3.0,\gate,0);
 
-			Document.current.keyDownAction = ({
-				arg view, char, modifiers, unicode, keycode;
+			Document.current.keyDownAction = ({ |view, char, modifiers, unicode, keycode|
 
 				if(char.isPrint,{
 					// [char, unicode, keycode].postln;
