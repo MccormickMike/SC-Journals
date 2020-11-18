@@ -1,2 +1,3 @@
 # SC-Journals
-A repository of the source code for my SuperCollider Journal pieces (https://www.youtube.com/playlist?list=PLj-xkY-L6IYkg6RrJxi7t2OivP2uSKuMH)
+SuperCollider code for my SC Journal pieces: (https://tinyurl.com/y4nlrhxs)
+Each piece is created for a specific occasion and therefore only performed once; these files are here merely as a reference for any interested eyes (and for me to laugh at my past coding practices). 
