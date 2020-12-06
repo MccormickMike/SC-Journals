@@ -20,11 +20,17 @@
 // then a "reset," typing out the same code/text again but different things happen...
 
 
+// one of these doesn't have to be in the SC IDE, obviously...will the Document methods work the same way in Atom, for example?
+// or I could do a piece in TextEdit, terminal, etc. or switch between several throughout the course of the piece.
+
+
 // consider making SCJournal Classes - unicode Parser, File/App opener, etc.
 // Maybe a class like Entry(dateArg ? getDate,{points to dictionary with string cues and functions},etc.)
 // does all the text parsing...maybe it's not that flexible however?
 
 // Cambridge change
+
+
 
 
 
@@ -45,11 +51,8 @@ i.plot(name: "nil",bounds: Rect(400,400,i.width/2,i.height/2), showInfo: false)
 
 
 
-
-
-
-// this worked pretty well, though ~cues was a dictionary of events
-// next time it can just be ("string" -> {func}) and the below code can be adjusted accordingly.
+// this worked pretty well although ~cues was a dictionary of events
+// next time it can just be ~cues.add("string" -> {func}) and the below code can be adjusted accordingly.
 
 (
 var date = Date.getDate.format("%d/%m/%Y");
