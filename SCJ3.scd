@@ -20,6 +20,8 @@
 // then a "reset," typing out the same code/text again but different things happen...
 
 
+// Consider the textual implications of recursion/quines in a more literal sense? Maybe a quine can be a literary and narrative device?
+
 // one of these doesn't have to be in the SC IDE, obviously...will the Document methods work the same way in Atom, for example?
 // or I could do a piece in TextEdit, terminal, etc. or switch between several throughout the course of the piece.
 
@@ -29,7 +31,7 @@
 // does all the text parsing...maybe it's not that flexible however?
 
 // Cambridge change
-
+// "People are often surprised to discover I’m taller than they think" - something about perception? Self-image?
 
 
 
