@@ -21,6 +21,7 @@
 
 
 // Consider the textual implications of recursion/quines in a more literal sense? Maybe a quine can be a literary and narrative device?
+// “Is a sentence with no subject.” is a sentence with no subject.
 
 // one of these doesn't have to be in the SC IDE, obviously...will the Document methods work the same way in Atom, for example?
 // or I could do a piece in TextEdit, terminal, etc. or switch between several throughout the course of the piece.
@@ -33,7 +34,8 @@
 // Cambridge change
 // "People are often surprised to discover I’m taller than they think" - something about perception? Self-image?
 
-
+// can I write a script that takes a screen shot, then creates a Window with a portion of the screenshot appearing back in the window
+// at the same coordinates? And then maybe I can fill the screen, and then they get animated, etc...
 
 
 // consider?
