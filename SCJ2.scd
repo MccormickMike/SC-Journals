@@ -6,8 +6,6 @@
 // turn off bracket completion
 Server.default.options.device = "BlackHole 16ch"  // for recording
 
-// MOMENTO MORI
-
 (
 var server = Server.default;
 var path = "/Users/mikemccormick/Desktop/SCJ2/";       // folder of materials
