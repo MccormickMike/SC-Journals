@@ -8,10 +8,10 @@ Server.default.options.device = "BlackHole 16ch"  // for recording
 
 (
 var server = Server.default;
-var path = "/Users/mikemccormick/Desktop/SCJ2/";       // folder of materials
+var path = "/Users/mikemccormick/Desktop/SCJ2/";  // folder of materials
 var ampScale = 1;
 
-server.options.device = "BlackHole 16ch";  // for recording
+// server.options.device = "BlackHole 16ch";        // for recording
 
 server.waitForBoot({
 
