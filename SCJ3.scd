@@ -19,6 +19,7 @@
 // could also be a ritual - writing the same block of code/text several times, things are triggered....
 // then a "reset," typing out the same code/text again but different things happen...
 
+// the above idea could be a good way to explore ideas related to memory?
 
 // Consider the textual implications of recursion/quines in a more literal sense? Maybe a quine can be a literary and narrative device?
 // “Is a sentence with no subject.” is a sentence with no subject.

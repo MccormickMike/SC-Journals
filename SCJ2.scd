@@ -4,7 +4,6 @@
 // post window wraps - yes
 // main window wraps - yes
 // turn off bracket completion
-Server.default.options.device = "BlackHole 16ch"  // for recording
 
 (
 var server = Server.default;
