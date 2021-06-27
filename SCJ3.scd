@@ -10,7 +10,8 @@
 // MainMenu Helpfile - can create a custom menu...???!??!
 
 // Look into History help documentation as a way to automate typed...performances?
-
+// Dialog class can be used to select file(s) and pass them as strings to a function
+// Explore Archive class to store file paths, etc.
 
 // facebook info can be exported as JSON files...could be interesting to scrape that data, no?
 
